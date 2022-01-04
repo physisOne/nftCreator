@@ -77,7 +77,7 @@ def generate_unique_images(amount, config):
     attributes = []
     for key in token:
       if key != "tokenId":
-        attributes.append({"type": key, "value": token[key]})
+        attributes.append({"type": key, "value": token[key], "rarity": counter_dict[key][token[key]]})
     token_metadata = {
         "name":  config["name"] + str(i+1),
         "description":  config["name"] + str(i+1) + " of 11,111",
