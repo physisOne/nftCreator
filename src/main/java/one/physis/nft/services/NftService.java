@@ -97,7 +97,7 @@ public class NftService {
                }
             }
 
-            Optional<Nft> nft = nftRepository.findById(i);
+            Optional<Nft> nft = nftRepository.findByIdAndProject(i, this.project);
             if (nft.isPresent()) {
                Nft n = nft.get();
                String hash = createNft(i, n);
@@ -124,7 +124,7 @@ public class NftService {
    public void generateDatabaseNfts() {
       for(int i = 1; i <= this.nftCount; i++) {
          try {
-            Optional<Nft> n = nftRepository.findById(i);
+            Optional<Nft> n = nftRepository.findByIdAndProject(i, this.project);
             if(n.isPresent()) {
                logger.info("NFT " + i + " already exists");
                continue;
@@ -132,9 +132,12 @@ public class NftService {
 
             logger.info("Creating NFT " + i);
 
-            InputStream inputStream = getClass().getClassLoader().getResourceAsStream("generator/metadata/" + i + ".json");
+            //InputStream inputStream = getClass().getClassLoader().getResourceAsStream("generator/metadata/" + i + ".json");
+            InputStream inputStream = getClass().getClassLoader().getResourceAsStream("generator/metadata/1.json");
             String json = IOUtils.toString(inputStream, StandardCharsets.UTF_8.name());
-            String ipfsPublicUrl = "https://ipfs.io/ipfs/" + this.imageIpfs + "/" + i + ".png";
+
+            //String ipfsPublicUrl = "https://ipfs.io/ipfs/" + this.imageIpfs + "/" + i + ".png";
+            String ipfsPublicUrl = "https://ipfs.io/ipfs/" + this.imageIpfs + "/1.jpg";
 
             String hash = null;
 

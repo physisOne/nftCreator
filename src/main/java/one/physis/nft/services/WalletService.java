@@ -4,8 +4,10 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import one.physis.nft.data.entities.Address;
+import one.physis.nft.data.entities.Project;
 import one.physis.nft.data.repositories.AddressRepository;
 import one.physis.nft.data.repositories.MintRepository;
+import one.physis.nft.data.repositories.ProjectRepository;
 import one.physis.nft.services.dto.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -31,6 +33,7 @@ public class WalletService {
    private final RestTemplate restTemplate;
    private final AddressRepository addressRepository;
    private final MintRepository mintRepository;
+   private final ProjectRepository projectRepository;
 
    private Date lastRestartDate;
 
@@ -38,16 +41,22 @@ public class WalletService {
    private int portReceive;
    @Value("${project.portSend}")
    private int portSend;
+   @Value("${project.projectId}")
+   private int projectId;
 
+
+   private Project project;
    private String urlReceive;
    private String urlSend;
 
    public WalletService(AddressRepository addressRepository,
                         MintRepository mintRepository,
+                        ProjectRepository projectRepository,
                         RestTemplate restTemplate) {
       this.restTemplate = restTemplate;
       this.addressRepository = addressRepository;
       this.mintRepository = mintRepository;
+      this.projectRepository = projectRepository;
       this.lastRestartDate = new Date();
    }
 
@@ -55,6 +64,7 @@ public class WalletService {
    public void init() {
       this.urlReceive = "http://127.0.0.1:" + this.portReceive + "/";
       this.urlSend = "http://127.0.0.1:" + this.portSend + "/";
+      this.project = project;
    }
 
    public void checkWallets() {
@@ -204,6 +214,7 @@ public class WalletService {
       return null;
    }
 
+   @PostConstruct
    public void initAddresses() {
       Addresses addresses = getAddresses();
 
@@ -213,6 +224,7 @@ public class WalletService {
             for (String address : addresses.getAddresses()) {
                Address ad = new Address();
                ad.setAddress(address);
+               ad.setProject(this.project);
                addressRepository.save(ad);
             }
          }
