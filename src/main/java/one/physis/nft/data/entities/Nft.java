@@ -28,6 +28,8 @@ public class Nft {
    @ManyToOne
    private Project project;
 
+   private String filename;
+
    public Integer getId() {
       return id;
    }
@@ -90,5 +92,13 @@ public class Nft {
 
    public void setAttributes(String attributes) {
       this.attributes = attributes;
+   }
+
+   public String getFilename() {
+      return filename;
+   }
+
+   public void setFilename(String filename) {
+      this.filename = filename;
    }
 }

@@ -14,5 +14,5 @@ public interface NftRepository extends CrudRepository<Nft, Integer> {
    @Query(nativeQuery = true, value = "SELECT * FROM nft n WHERE n.taken = 0 and n.project_id = :project_id order by RAND() LIMIT :count")
    List<Nft> findNotTaken(@Param("count") int count, @Param("project_id") int projectId);
 
-   Optional<Nft> findByIdAndProject(Integer id, Project project);
+   Optional<Nft> findByNumberAndProject(Integer number, Project project);
 }

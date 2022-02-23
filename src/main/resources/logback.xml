@@ -1,27 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
 
-    <appender name="STREETS" class="ch.qos.logback.core.rolling.RollingFileAppender">
+    <appender name="DEMO" class="ch.qos.logback.core.rolling.RollingFileAppender">
         <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
             <level>DEBUG</level>
         </filter>
-        <file>streets.log</file>
+        <file>demo.log</file>
         <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <fileNamePattern>streets.log-%d.gz</fileNamePattern>
-            <maxHistory>10</maxHistory>
-        </rollingPolicy>
-        <encoder>
-            <pattern>%d{HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n</pattern>
-        </encoder>
-    </appender>
-
-    <appender name="SUSHI" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <filter class="ch.qos.logback.classic.filter.ThresholdFilter">
-            <level>DEBUG</level>
-        </filter>
-        <file>sushi.log</file>
-        <rollingPolicy class="ch.qos.logback.core.rolling.TimeBasedRollingPolicy">
-            <fileNamePattern>sushi.log-%d.gz</fileNamePattern>
+            <fileNamePattern>demo.log-%d.gz</fileNamePattern>
             <maxHistory>10</maxHistory>
         </rollingPolicy>
         <encoder>
@@ -52,13 +38,8 @@
     </appender>
 
 
-    <logger name="streets" level="DEBUG">
-        <appender-ref ref="STREETS"/>
-        <appender-ref ref="CONSOLE"/>
-    </logger>
-
-    <logger name="sushi" level="DEBUG">
-        <appender-ref ref="SUSHI"/>
+    <logger name="demo" level="DEBUG">
+        <appender-ref ref="DEMO"/>
         <appender-ref ref="CONSOLE"/>
     </logger>
 

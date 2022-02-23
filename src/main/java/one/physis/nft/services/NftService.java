@@ -14,9 +14,7 @@ import org.springframework.stereotype.Service;
 import javax.annotation.PostConstruct;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 
 @Service
 public class NftService {
@@ -33,12 +31,17 @@ public class NftService {
    private String tokenName;
    @Value("${project.projectId}")
    private int projectId;
+   @Value("${project.rarity}")
+   private boolean rarity;
 
    private final WalletService walletService;
    private final NftRepository nftRepository;
    private final ProjectRepository projectRepository;
    private final Gson gson;
    private Project project;
+   private Map rarityMap = null;
+
+   private
 
    Logger logger = LoggerFactory.getLogger(NftService.class);
 
@@ -52,12 +55,23 @@ public class NftService {
    }
 
    @PostConstruct
-   public void init() {
+   public void init() throws Exception {
+      if(this.rarity) {
+         InputStream inputStream = getClass().getClassLoader().getResourceAsStream("generator/metadata/count.json");
+         String json = IOUtils.toString(inputStream, StandardCharsets.UTF_8.name());
+         this.rarityMap = gson.fromJson(json, Map.class);
+      }
       this.project = this.projectRepository.findById(this.projectId).get();
+
+
+      //this.walletService.initAddresses();
+      //generateDatabaseNfts();
+      generateNfts();
    }
 
    private String createNft(int i, Nft nft) throws Exception {
       String ipfsJsonUrl = "ipfs://ipfs/" + this.jsonIpfs + "/" + i + ".json";
+      //String ipfsJsonUrl = "ipfs://ipfs/" + this.jsonIpfs; //TODO + "/1.json";
 
       String hash = null;
       String tokenSymbol = this.tokenSymbol + i;
@@ -88,7 +102,7 @@ public class NftService {
                break;
             }
 
-            Integer htrBalance = walletService.checkHtrBalance(true);
+            Integer htrBalance = walletService.checkHtrBalance();
             if (htrBalance != null) {
                logger.info("HTR Balance is " + htrBalance);
                if(htrBalance == 0) {
@@ -97,24 +111,32 @@ public class NftService {
                }
             }
 
-            Optional<Nft> nft = nftRepository.findByIdAndProject(i, this.project);
+            boolean sleep = true;
+            Optional<Nft> nft = nftRepository.findByNumberAndProject(i, this.project);
             if (nft.isPresent()) {
                Nft n = nft.get();
-               String hash = createNft(i, n);
-               n.setToken(hash);
-               nftRepository.save(n);
+               if(n.getToken().contains("hash")) {
+                  String hash = createNft(i, n);
+                  n.setToken(hash);
+                  nftRepository.save(n);
+               } else {
+                  sleep = false;
+                  logger.info("NFT " + i + " has already been generated");
+               }
             }
-
-            logger.info("Successfully created NFT " + i);
-            Thread.sleep(3000);
+            if(sleep) {
+               logger.info("Successfully created NFT " + i);
+               Thread.sleep(1500);
+            }
          } catch (Exception ex) {
             logger.error("Could not create NFT " + i, ex);
             failed.add(i);
+            return;
          }
       }
 
       if(failed.size() > 0) {
-         logger.error("FAILED TREES");
+         logger.error("FAILED NFTS");
          for(Integer i : failed) {
             logger.info(i.toString());
          }
@@ -124,7 +146,7 @@ public class NftService {
    public void generateDatabaseNfts() {
       for(int i = 1; i <= this.nftCount; i++) {
          try {
-            Optional<Nft> n = nftRepository.findByIdAndProject(i, this.project);
+            Optional<Nft> n = nftRepository.findByNumberAndProject(i, this.project);
             if(n.isPresent()) {
                logger.info("NFT " + i + " already exists");
                continue;
@@ -132,12 +154,38 @@ public class NftService {
 
             logger.info("Creating NFT " + i);
 
-            //InputStream inputStream = getClass().getClassLoader().getResourceAsStream("generator/metadata/" + i + ".json");
-            InputStream inputStream = getClass().getClassLoader().getResourceAsStream("generator/metadata/1.json");
+            InputStream inputStream = getClass().getClassLoader().getResourceAsStream("generator/metadata/" + i + ".json");
+            //InputStream inputStream = getClass().getClassLoader().getResourceAsStream("generator/metadata/1.json");
             String json = IOUtils.toString(inputStream, StandardCharsets.UTF_8.name());
 
-            //String ipfsPublicUrl = "https://ipfs.io/ipfs/" + this.imageIpfs + "/" + i + ".png";
-            String ipfsPublicUrl = "https://ipfs.io/ipfs/" + this.imageIpfs + "/1.jpg";
+            if(rarity) {
+               Map jsonMap = gson.fromJson(json, Map.class);
+
+               for (Map attribute : (List<Map>) jsonMap.get("attributes")) {
+                  String traitType = (String) attribute.get("trait_type");
+                  String value = (String) attribute.get("value");
+                  boolean found = false;
+                  for(String key : (Set<String>)rarityMap.keySet()) {
+                     if(key.equalsIgnoreCase(traitType)) {
+                        for(String key2 : (Set<String>)((Map)rarityMap.get(key)).keySet()){
+                           if(key2.equalsIgnoreCase(value)) {
+                              found = true;
+                              String rarity = String.valueOf(((Double)((Map)rarityMap.get(key)).get(key2)).intValue());
+                              attribute.put("rarity", rarity);
+                           }
+                        }
+                     }
+                  }
+                  if(!found) {
+                     logger.error("Could not find rarity for " + traitType + " : " + value);
+                     return;
+                  }
+               }
+               json = gson.toJson(jsonMap);
+            }
+
+            String ipfsPublicUrl = "https://ipfs.io/ipfs/" + this.imageIpfs + "/" + i + ".png";
+            //String ipfsPublicUrl = "https://ipfs.io/ipfs/" + this.imageIpfs; //TODO + "/1.jpg";
 
             String hash = null;
 
@@ -150,6 +198,7 @@ public class NftService {
             nft.setIpfs(ipfsPublicUrl);
             nft.setProject(this.project);
             nft.setAttributes(json);
+            nft.setFilename(i + ".png");
 
             nftRepository.save(nft);
 
